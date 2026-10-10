@@ -1,0 +1,103 @@
+#!/usr/bin/env node
+
+const path = require("path");
+const { adbDevices } = require("../src/adb");
+const { screenshot } = require("../src/screencap");
+const { pushFace } = require("../src/push");
+
+async function setup(argv) {
+  const { ensureAll } = await import("../src/sdk.js");
+  await ensureAll();
+}
+
+async function start(argv) {
+  const { start } = await import("../src/emulator.js");
+  await start(argv);
+}
+
+async function stop() {
+  const { stop } = await import("../src/emulator.js");
+  await stop();
+}
+
+async function status() {
+  const { status } = await import("../src/emulator.js");
+  await status();
+  const devices = adbDevices();
+  console.log("adb devices:", devices.join(", ") || "(nenhum)");
+}
+
+async function push(argv) {
+  const local = argv._[0];
+  const name = argv._[1];
+  if (!local) {
+    console.error("uso: mirante-emulator push <face.bin> [nome]");
+    process.exit(1);
+  }
+  await pushFace(local, name);
+}
+
+async function shot(argv) {
+  const out = argv._[0] || "band-screen.png";
+  await screenshot(path.resolve(out));
+}
+
+const COMMANDS = {
+  setup,
+  start,
+  stop,
+  status,
+  push,
+  screenshot: shot,
+  devices: async () => {
+    const d = adbDevices();
+    console.log(d.length ? d.join("\n") : "(nenhum device adb)");
+  },
+  help: () => {
+    console.log(`mirante-emulator — bridge entre o Mirante e o emulador Vela da Xiaomi
+
+uso:
+  mirante-emulator setup        baixa o SDK Vela (~650MB, CDN da Xiaomi) e cria o VVD
+  mirante-emulator start        sobe o emulador (mantém o processo aberto)
+  mirante-emulator stop         derruba o emulador (adb emu kill)
+  mirante-emulator status       mostra VVD ativo e devices adb
+  mirante-emulator devices      lista devices adb
+  mirante-emulator push <face.bin> [nome]   valida o magic (5A A5 34 12) e envia a face
+  mirante-emulator screenshot [out.png]     captura a tela da banda via gRPC
+
+env:
+  MIRANTE_ADB, MIRANTE_SERIAL, QUIET`);
+  },
+};
+
+function _parse(argv) {
+  const out = { _: [] };
+  for (const a of argv) {
+    if (a.startsWith("-") && !a.startsWith("--")) {
+      out[a.replace(/^-+/, "")] = true;
+    } else if (a.startsWith("--")) {
+      const kv = a.slice(2);
+      const eq = kv.indexOf("=");
+      if (eq >= 0) out[kv.slice(0, eq)] = kv.slice(eq + 1);
+      else out[kv] = true;
+    } else {
+      out._.push(a);
+    }
+  }
+  return out;
+}
+
+async function main() {
+  const argv = process.argv.slice(2);
+  const cmd = argv[0];
+  const args = _parse(argv.slice(1));
+  const fn = COMMANDS[cmd] || COMMANDS.help;
+  try {
+    await fn(args);
+  } catch (e) {
+    console.error("erro:", e.message);
+    process.exit(1);
+  }
+}
+
+main();

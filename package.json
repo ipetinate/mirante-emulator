@@ -1,0 +1,22 @@
+{
+  "name": "mirante-emulator",
+  "version": "0.1.0",
+  "description": "Emulator bridge for Mirante: boots Xiaomi's official Vela watch emulator on Apple Silicon and installs watchfaces via adb.",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "mirante-emulator": "bin/mirante-emulator"
+  },
+  "scripts": {
+    "setup": "node bin/mirante-emulator setup",
+    "start": "node bin/mirante-emulator start",
+    "stop": "node bin/mirante-emulator stop"
+  },
+  "dependencies": {
+    "@aiot-toolkit/emulator": "2.0.5",
+    "@miwt/adb": "0.9.1"
+  }
+}
