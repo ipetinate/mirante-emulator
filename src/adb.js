@@ -16,30 +16,32 @@ function resolveAdb() {
   if (cachedBin) return cachedBin;
   if (process.env.MIRANTE_ADB && fs.existsSync(process.env.MIRANTE_ADB)) {
     cachedBin = process.env.MIRANTE_ADB;
-    return cachedBin;
+  } else {
+    cachedBin = whichAdb();
+    if (!cachedBin) {
+      const bundled = path.join(
+        __dirname,
+        "..",
+        "node_modules",
+        "@miwt",
+        "adb",
+        "bin",
+        process.platform === "darwin" ? "mac" : process.platform === "win32" ? "windows" : "linux",
+        "adb" + (process.platform === "win32" ? ".exe" : "")
+      );
+      if (fs.existsSync(bundled)) cachedBin = bundled;
+    }
   }
-  const system = whichAdb();
-  if (system) {
-    cachedBin = system;
-    return cachedBin;
+  if (!cachedBin) {
+    throw new Error(
+      "adb não encontrado. Instale o platform-tools ou defina MIRANTE_ADB para o binário adb."
+    );
   }
-  const bundled = path.join(
-    __dirname,
-    "..",
-    "node_modules",
-    "@miwt",
-    "adb",
-    "bin",
-    process.platform === "darwin" ? "mac" : process.platform === "win32" ? "windows" : "linux",
-    "adb" + (process.platform === "win32" ? ".exe" : "")
-  );
-  if (fs.existsSync(bundled)) {
-    cachedBin = bundled;
-    return cachedBin;
+  const dir = path.dirname(cachedBin);
+  if (!(process.env.PATH || "").split(path.delimiter).includes(dir)) {
+    process.env.PATH = `${dir}${path.delimiter}${process.env.PATH || ""}`;
   }
-  throw new Error(
-    "adb não encontrado. Instale o platform-tools ou defina MIRANTE_ADB para o binário adb."
-  );
+  return cachedBin;
 }
 
 function adb(args, opts = {}) {

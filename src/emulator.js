@@ -20,12 +20,12 @@ async function start(argv) {
   }
   augmentPath();
   const { VVD_NAME } = require("./config");
-  const { startVvd } = manager();
-  const { coldBoot, emulatorInstance } = await startVvd({
+  const verbose = argv.verbose === true;
+  const { coldBoot, emulatorInstance } = await manager().startVvd({
     vvdName: VVD_NAME,
-    verbose: argv.verbose !== false,
-    stdoutCallback: (m) => console.log("[emu]", String(m).trimEnd()),
-    stderrCallback: (m) => console.error("[emu]", String(m).trimEnd()),
+    verbose,
+    stdoutCallback: verbose ? (m) => console.log("[emu]", String(m).trimEnd()) : () => {},
+    stderrCallback: verbose ? (m) => console.error("[emu]", String(m).trimEnd()) : () => {},
   });
   console.log(`[emu] ${VVD_NAME} iniciado (coldBoot=${coldBoot})`);
   console.log(`[emu] adb na porta ${ADB_PORT}; mantenha este processo aberto.`);

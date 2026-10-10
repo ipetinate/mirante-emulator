@@ -21,6 +21,11 @@ function manager() {
 
 async function ensureSDK() {
   const mgr = manager();
+  const needed = await mgr.hasSDKPartUpdate();
+  if (!Array.isArray(needed) || needed.length === 0) {
+    console.log("[sdk] SDK já instalado e atualizado");
+    return;
+  }
   const downloader = await mgr.downloadSDK({
     force: false,
     cliProgress: !process.env.QUIET,
